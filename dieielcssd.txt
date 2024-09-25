@@ -1,0 +1,235 @@
+3.---->>>>
+import os
+import tensorflow as tf
+from PIL import Image
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D
+from tensorflow.keras.optimizers import Adam
+
+# Resizing Images for Dataset (Training and Testing)
+def resize_images(directory):
+    for file in os.listdir(directory):
+        f_img = os.path.join(directory, file)
+        if file.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.gif')):  # Check for valid image file types
+            try:
+                img = Image.open(f_img)
+                img = img.resize((112, 112))
+                img.save(f_img)
+            except Exception as e:
+                print(f"Error resizing image {f_img}: {e}")
+
+# Resizing Training Dataset
+resize_images('./training_set/training_set/dogs')
+resize_images('./training_set/training_set/cats')
+
+# Resizing Test Dataset
+resize_images('./test_set/test_set/dogs')
+resize_images('./test_set/test_set/cats')
+
+# Image Preprocessing
+IMAGE_SIZE = 112
+BATCH_SIZE = 32
+
+train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=90,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True
+)
+
+test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
+
+# Flow from directory should point to the main folder containing class subfolders
+train_set = train_datagen.flow_from_directory(
+    './training_set/training_set',  # This should have 'dogs' and 'cats' subdirectories
+    target_size=(IMAGE_SIZE, IMAGE_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode='binary'
+)
+
+test_set = test_datagen.flow_from_directory(
+    './test_set/test_set',  # This should also have 'dogs' and 'cats' subdirectories
+    target_size=(IMAGE_SIZE, IMAGE_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode='binary'
+)
+
+# Model Building
+model = Sequential([
+    Conv2D(32, (3, 3), activation='relu', input_shape=(112, 112, 3)),
+    MaxPool2D(2, 2),
+    Conv2D(32, (3, 3), activation='relu'),
+    MaxPool2D(2, 2),
+    Flatten(),
+    Dense(100, activation='relu'),
+    Dense(1, activation='sigmoid')
+])
+
+# Compiling the Model
+model.compile(optimizer=Adam(), loss='binary_crossentropy', metrics=['accuracy'])
+
+# Model Summary
+model.summary()
+
+# Model Training
+model.fit(train_set, epochs=10, validation_data=test_set)
+
+# Results
+loss, accuracy = model.evaluate(test_set)
+print(f"Test Loss: {loss}, Test Accuracy: {accuracy}")
+
+
+
+4.....---->>>
+# Importing the necessary libraries
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPool2D, BatchNormalization
+from tensorflow.keras.optimizers import Adam
+
+# Preprocessing and loading images
+image_size = 64
+batch_size = 32
+
+train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
+    rescale=1./255,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True
+)
+test_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
+
+train_set = train_datagen.flow_from_directory(
+    './dataset_mnist/train',
+    target_size=(image_size, image_size),
+    batch_size=batch_size,
+    class_mode='categorical'
+)
+test_set = test_datagen.flow_from_directory(
+    './dataset_mnist/test',
+    target_size=(image_size, image_size),
+    batch_size=batch_size,
+    class_mode='categorical'
+)
+
+# Model building
+model = Sequential([
+    Conv2D(32, (3, 3), activation='relu', input_shape=(image_size, image_size, 3)),
+    BatchNormalization(),
+    MaxPool2D(pool_size=(2, 2)),
+    Dropout(0.25),
+
+    Conv2D(64, (3, 3), activation='relu'),
+    BatchNormalization(),
+    MaxPool2D(pool_size=(2, 2)),
+
+    Conv2D(64, (3, 3), activation='relu'),
+    MaxPool2D(pool_size=(2, 2)),
+
+    Conv2D(64, (3, 3), activation='relu'),
+    MaxPool2D(pool_size=(2, 2)),
+    Dropout(0.25),
+
+    Flatten(),
+    Dense(128, activation='relu'),
+    Dense(10, activation='sigmoid')
+])
+
+# Model summary
+model.summary()
+
+# Model compilation
+model.compile(loss='binary_crossentropy', optimizer=Adam(), metrics=['accuracy'])
+
+# Model training
+history = model.fit(train_set, epochs=15, validation_data=test_set)
+
+# Model evaluation
+print("Training Complete")
+
+
+
+5..----->>>>
+# Importing the necessary libraries
+from tensorflow import keras
+from keras.models import Sequential, Model
+from keras.layers import Input, Dense, Dropout, Flatten, Conv2D, MaxPool2D, BatchNormalization
+
+# Preprocessing the data
+image_size = 224
+batch_size = 32
+
+train_datagen = keras.preprocessing.image.ImageDataGenerator(
+    rescale=1./255,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True
+)
+test_datagen = keras.preprocessing.image.ImageDataGenerator(rescale=1./255)
+
+train_set = train_datagen.flow_from_directory(
+    '/content/drive/MyDrive/mnist_cnn/mnist_cnn/dataset_mnist/train', 
+    target_size=(image_size, image_size), 
+    batch_size=batch_size, 
+    class_mode='categorical'
+)
+
+test_set = test_datagen.flow_from_directory(
+    '/content/drive/MyDrive/mnist_cnn/mnist_cnn/dataset_mnist/test', 
+    target_size=(image_size, image_size), 
+    batch_size=batch_size, 
+    class_mode='categorical'
+)
+
+# Building the model using the VGG16 architecture
+input = Input(shape=(224, 224, 3))
+
+# 1st Conv Block
+x = Conv2D(filters=64, kernel_size=3, padding='same', activation='relu')(input)
+x = Conv2D(filters=64, kernel_size=3, padding='same', activation='relu')(x)
+x = MaxPool2D(pool_size=2, strides=2, padding='same')(x)
+
+# 2nd Conv Block
+x = Conv2D(filters=128, kernel_size=3, padding='same', activation='relu')(x)
+x = Conv2D(filters=128, kernel_size=3, padding='same', activation='relu')(x)
+x = MaxPool2D(pool_size=2, strides=2, padding='same')(x)
+
+# 3rd Conv Block
+x = Conv2D(filters=256, kernel_size=3, padding='same', activation='relu')(x)
+x = Conv2D(filters=256, kernel_size=3, padding='same', activation='relu')(x)
+x = Conv2D(filters=256, kernel_size=3, padding='same', activation='relu')(x)
+x = MaxPool2D(pool_size=2, strides=2, padding='same')(x)
+
+# 4th Conv Block
+x = Conv2D(filters=512, kernel_size=3, padding='same', activation='relu')(x)
+x = Conv2D(filters=512, kernel_size=3, padding='same', activation='relu')(x)
+x = Conv2D(filters=512, kernel_size=3, padding='same', activation='relu')(x)
+x = MaxPool2D(pool_size=2, strides=2, padding='same')(x)
+
+# 5th Conv Block
+x = Conv2D(filters=512, kernel_size=3, padding='same', activation='relu')(x)
+x = Conv2D(filters=512, kernel_size=3, padding='same', activation='relu')(x)
+x = Conv2D(filters=512, kernel_size=3, padding='same', activation='relu')(x)
+x = MaxPool2D(pool_size=2, strides=2, padding='same')(x)
+
+# Fully connected layers
+x = Flatten()(x)
+x = Dense(units=4096, activation='relu')(x)
+x = Dense(units=4096, activation='relu')(x)
+output = Dense(units=10, activation='softmax')(x)
+
+# Creating the model
+model = Model(inputs=input, outputs=output)
+
+# Model summary
+model.summary()
+
+# Compiling the model
+model.compile(loss='categorical_crossentropy', optimizer='Adam', metrics=['accuracy'])
+
+# Training the model
+history = model.fit(train_set, epochs=15, validation_data=test_set)
+
+# Model evaluation
+print("Training complete")
