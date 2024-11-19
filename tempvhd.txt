@@ -1,0 +1,66 @@
+import cv2
+import numpy as np
+
+def estimate_object_size_from_camera(reference_width):
+    # Initialize the camera
+    cap = cv2.VideoCapture(0)
+
+    if not cap.isOpened():
+        print("Error: Camera not accessible.")
+        return
+
+    # Capture a single frame
+    ret, frame = cap.read()
+    cap.release()  # Release the camera
+
+    if not ret:
+        print("Error: Could not read frame.")
+        return
+
+    # Convert to grayscale
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # Apply Gaussian blur to reduce noise
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+    # Apply binary thresholding
+    _, thresh = cv2.threshold(blurred, 127, 255, cv2.THRESH_BINARY)
+
+    # Find contours
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Initialize pixels per metric
+    pixels_per_metric = None
+
+    # Loop through contours and estimate size
+    for contour in contours:
+        # Calculate the area of the contour
+        area = cv2.contourArea(contour)
+
+        # Calculate the bounding box
+        x, y, w, h = cv2.boundingRect(contour)
+
+        # Draw the contour and bounding box on the image
+        cv2.drawContours(frame, [contour], -1, (0, 255, 0), 2)
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+        # Calculate the size in inches using the reference width
+        if pixels_per_metric is None:
+            pixels_per_metric = w / reference_width  # Assuming reference width is known in inches
+
+        # Calculate dimensions in inches
+        width_in_inches = w / pixels_per_metric
+        height_in_inches = h / pixels_per_metric
+
+        # Display the size information
+        cv2.putText(frame, f'Width: {width_in_inches:.2f} in', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        cv2.putText(frame, f'Height: {height_in_inches:.2f} in', (x, y + h + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
+    # Show the result
+    cv2.imshow('Object Size Estimation', frame)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+# Example usage
+# Reference width of the known object in inches (e.g., a US quarter is 0.955 inches)
+estimate_object_size_from_camera(reference_width=0.955)
